@@ -1,27 +1,25 @@
 // ============================================================
 //  FORT WORTH BARBER SUPPLY — Wholesale Portal Backend
-//  Hosted on Glitch.com | Powered by Square API
+//  Hosted on Render.com | Powered by Square API
 // ============================================================
 //
 //  SETUP INSTRUCTIONS:
-//  1. Go to glitch.com → New Project → glitch-hello-node
-//  2. Delete everything in server.js and paste this entire file
-//  3. Open the .env file in Glitch and add:
+//  1. Upload this file + package.json to your GitHub repo
+//  2. Connect repo to Render.com as a Web Service
+//  3. Add these Environment Variables in Render dashboard:
+//
 //       SQUARE_ACCESS_TOKEN=your_production_access_token
 //       SQUARE_LOCATION_ID=your_location_id
 //       SQUARE_APP_ID=your_application_id
-//       EMAIL_USER=your_gmail@gmail.com
-//       EMAIL_PASS=your_gmail_app_password
-//       ADMIN_EMAIL=you@fwbarbersupply.com
+//       EMAIL_USER=orders@fwbarbersupply.com
+//       EMAIL_PASS=your_cpanel_email_password
+//       EMAIL_HOST=mail.fwbarbersupply.com
+//       EMAIL_PORT=465
+//       ADMIN_EMAIL=orders@fwbarbersupply.com
 //       PORTAL_SECRET=make_up_any_secret_password
-//  4. Open package.json and make sure "dependencies" includes:
-//       "express": "^4.18.0",
-//       "squareup": "^33.0.0",
-//       "nodemailer": "^6.9.0",
-//       "cors": "^2.8.5",
-//       "dotenv": "^16.0.0"
-//  5. Click Tools → Terminal → type: refresh
-//  6. Your server URL will be: https://YOUR-PROJECT-NAME.glitch.me
+//
+//  4. Build Command: npm install
+//  5. Start Command: node server.js
 //
 // ============================================================
 
@@ -29,7 +27,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
-const { ApiError, Client, Environment } = require('squareup');
+const { ApiError, Client, Environment } = require('square/legacy');
 
 const app = express();
 app.use(cors());
@@ -44,16 +42,17 @@ const squareClient = new Client({
 const { catalogApi, inventoryApi, ordersApi, paymentsApi, customersApi } = squareClient;
 const LOCATION_ID = process.env.SQUARE_LOCATION_ID;
 
-// ── Email Transporter ──────────────────────────────────────
+// ── Email Transporter (cPanel SMTP) ───────────────────────
 const mailer = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.EMAIL_HOST || 'mail.fwbarbersupply.com',
+  port: parseInt(process.env.EMAIL_PORT || '465'),
+  secure: true, // true for port 465, false for 587
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // Use a Gmail App Password (not your real password)
-    // To create a Gmail App Password:
-    // 1. Go to myaccount.google.com → Security → 2-Step Verification
-    // 2. Scroll down to "App passwords" → Generate one for "Mail"
-    // 3. Paste that 16-character password in your .env as EMAIL_PASS
+    user: process.env.EMAIL_USER, // orders@fwbarbersupply.com
+    pass: process.env.EMAIL_PASS, // your cPanel email password
+  },
+  tls: {
+    rejectUnauthorized: false, // needed for some cPanel hosts
   },
 });
 
